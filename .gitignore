@@ -39,9 +39,11 @@ spark-warehouse/
 
 # Data
 *.csv
+!data/sample_data.csv
 *.parquet
 data/*
 !data/.gitkeep
+!data/sample_data.csv
 
 # Logs
 *.log
