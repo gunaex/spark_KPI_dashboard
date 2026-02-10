@@ -58,8 +58,19 @@ spark_KPI_dashboard/
 ### Prerequisites
 - Python 3.7 or higher
 - Java 8 or higher (required for Apache Spark)
+- Docker (optional, for containerized deployment)
 
-### Setup
+### Quick Setup
+
+**Option 1: Using setup script (recommended)**
+```bash
+git clone https://github.com/gunaex/spark_KPI_dashboard.git
+cd spark_KPI_dashboard
+chmod +x setup.sh
+./setup.sh
+```
+
+**Option 2: Manual setup**
 
 1. **Clone the repository**
    ```bash
@@ -77,6 +88,15 @@ spark_KPI_dashboard/
    cp config/.env.example .env
    # Edit .env file with your configuration
    ```
+
+**Option 3: Using Docker**
+```bash
+git clone https://github.com/gunaex/spark_KPI_dashboard.git
+cd spark_KPI_dashboard
+docker-compose up -d
+```
+
+The dashboard will be available at `http://localhost:5000`
 
 ## Usage
 
