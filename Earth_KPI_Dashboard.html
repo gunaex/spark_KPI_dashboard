@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>SPARK | KPI Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg: #F4F1EA;
+            --header: #4E342E;
+            --card: #FFFFFF;
+            --text: #3E2723;
+            --rust: #BF360C;
+            --olive: #558B2F;
+            --taupe: #8D6E63;
+            --gold: #D4AF37;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: var(--header);
+            color: #F4F1EA;
+            padding: 10px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .controls {
+            background: #E7E0D2;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            align-items: center;
+            border-bottom: 1px solid #D7CCC8;
+        }
+
+        .summary-box {
+            background: #FFFFFF;
+            border: 1px solid var(--taupe);
+            padding: 8px 15px;
+            border-radius: 4px;
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .file-label {
+            background: var(--taupe);
+            color: white;
+            padding: 6px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .dashboard-container {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .width-limiter {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .grid-main {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 15px;
+        }
+
+        .grid-sub {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 4px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid var(--taupe);
+        }
+
+        .chart-title {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--header);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .chart-h {
+            height: 220px;
+            width: 100%;
+        }
+
+        .pmo-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: #eee;
+            color: #666;
+            font-weight: normal;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>SPARK | KPI DASHBOARD</h1>
+        <div id="status" style="font-size: 11px; font-weight: 300;">Awaiting Data...</div>
+    </div>
+
+    <div class="controls">
+        <label class="file-label" for="fileInput">Upload KPI Data</label>
+        <input type="file" id="fileInput" style="display: none;" accept=".xlsx, .xls">
+
+        <div class="summary-box" id="summaryCell">
+            <span style="color:var(--taupe)">PMO STATUS:</span>
+            <span id="sum-adv" style="color:var(--olive)">ADV: -</span>
+            <span id="sum-norm" style="color:var(--gold)">NORM: -</span>
+            <span id="sum-delay" style="color:var(--rust)">DELAY: -</span>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="width-limiter">
+
+            <div class="grid-main">
+                <div class="card">
+                    <div class="chart-title">Overall Health <span class="pmo-badge">Overall %</span></div>
+                    <div class="chart-h"><canvas id="healthChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="chart-title">Milestone Status Ranking <span class="pmo-badge">By Count</span></div>
+                    <div class="chart-h"><canvas id="phaseRankingChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="grid-main">
+                <div class="card">
+                    <div class="chart-title">Section Efficiency Score <span class="pmo-badge">Adv+2 | Norm+1 |
+                            Delay-1</span></div>
+                    <div class="chart-h"><canvas id="sectionScoreChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="chart-title">Variance Analysis <span class="pmo-badge">Avg Days (Early vs Late)</span>
+                    </div>
+                    <div class="chart-h"><canvas id="bottleneckChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="grid-sub">
+                <div class="card">
+                    <div class="chart-title">Milestone Reliability %</div>
+                    <div class="chart-h"><canvas id="radarChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="chart-title">Team Load (Late/OK)</div>
+                    <div class="chart-h"><canvas id="teamChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="chart-title">Technology Bottlenecks</div>
+                    <div class="chart-h"><canvas id="solutionChart"></canvas></div>
+                </div>
+            </div>
+            <div style="font-size:8px; color:#555;">
+                Requirement Gathering : Contact (SLA = 1 Day) → <strong>REQ-C:1D</strong><br>
+                Solution and Budgetary : Solution and budgetary (SLA = 14 Day) → <strong>SOL-BUD:14D</strong><br>
+                Proposal/PR&PO Approve : Request Quotation (SLA = 3 Day) → <strong>PROP-RQ:3D</strong><br>
+                Implement : Vendor Onboarding (SLA = 14 Day) → <strong>IMP-VOB:14D</strong><br>
+                Implement : Security (SLA = 14 Day) → <strong>IMP-SEC:14D</strong><br>
+                Hand Over : Sign off Installation - Dev (SLA = 1 Day) → <strong>HO-INST-DEV:1D</strong><br>
+                Hand Over : Sign off H/O - Dev (SLA = 1 Day) → <strong>HO-DEV:1D</strong><br>
+                Hand Over : Sign off Installation - Prod (SLA = 1 Day) → <strong>HO-INST-PROD:1D</strong><br>
+                Hand Over : Sign off H/O - Prod (SLA = 1 Day) → <strong>HO-PROD:1D</strong>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        Chart.register(ChartDataLabels);
+        let charts = {};
+        const colors = { rust: '#BF360C', olive: '#558B2F', taupe: '#8D6E63', gold: '#D4AF37' };
+
+        // UPDATED ABBREVIATIONS
+        const pmoPhases = [
+            "REQ-C:1D", "SOL-BUD:14D", "PROP-RQ:3D",
+            "IMP-VOB:14D", "IMP-SEC:14D", "HO-INST-DEV:1D",
+            "HO-DEV:1D", "HO-INST-PROD:1D", "HO-PROD:1D"
+        ];
+
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const wb = XLSX.read(ev.target.result, { type: 'array', cellDates: true });
+                const sheetName = wb.SheetNames.find(n => n.trim().toUpperCase() === "KPI") || wb.SheetNames[0];
+                const data = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1 });
+                processData(data);
+                document.getElementById('status').innerText = "LIVE DATA: " + file.name;
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function parseDate(val) {
+            if (val instanceof Date) return val;
+            if (typeof val === 'number') return new Date((val - 25569) * 86400 * 1000);
+            return null;
+        }
+
+        function processData(data) {
+            const hIdx = data.findIndex(r => r.some(c => c && c.toString().includes("No.")));
+            const headers = data[hIdx].map(h => h ? h.toString().trim() : "");
+            const subHeaders = data[hIdx + 1] ? data[hIdx + 1].map(h => h ? h.toString().trim() : "") : [];
+
+            const colMap = {
+                section: headers.indexOf("Section"),
+                project: headers.indexOf("Project Name"),
+                status: headers.indexOf("Total SLA Status"),
+                team: headers.indexOf("SPARK (ITO/SPARK)"),
+                solution: headers.indexOf("Solution")
+            };
+
+            let phaseColumns = [];
+            subHeaders.forEach((h, idx) => {
+                if (h === "SLA Status") phaseColumns.push({ t: idx - 2, a: idx - 1 });
+            });
+            const activePhases = phaseColumns.slice(0, 9);
+
+            const rows = data.slice(hIdx + 2).filter(r => r[colMap.project]);
+
+            let portfolioHealth = { advance: 0, normal: 0, delay: 0 };
+            let pStats = activePhases.map((p, i) => ({ name: pmoPhases[i], advance: 0, normal: 0, delay: 0, totalDiff: 0, count: 0 }));
+            let sectionScores = {};
+            let solMap = {};
+
+            rows.forEach(r => {
+                let isLate = false;
+                let isAdvance = true;
+                let projectScore = 0;
+
+                activePhases.forEach((p, i) => {
+                    const target = parseDate(r[p.t]), actual = parseDate(r[p.a]);
+                    if (target && actual) {
+                        const diff = (actual - target) / 86400000;
+                        pStats[i].totalDiff += diff;
+                        pStats[i].count++;
+
+                        if (diff > 0) {
+                            pStats[i].delay++; projectScore -= 1; isLate = true; isAdvance = false;
+                            const sol = r[colMap.solution] || "Other";
+                            solMap[sol] = (solMap[sol] || 0) + 1;
+                        } else if (diff < 0) {
+                            pStats[i].advance++; projectScore += 2;
+                        } else {
+                            pStats[i].normal++; projectScore += 1; isAdvance = false;
+                        }
+                    }
+                });
+
+                if (isLate) portfolioHealth.delay++;
+                else if (isAdvance) portfolioHealth.advance++;
+                else portfolioHealth.normal++;
+
+                const secName = r[colMap.section] || "Unknown";
+                sectionScores[secName] = (sectionScores[secName] || 0) + projectScore;
+            });
+
+            const total = rows.length;
+            document.getElementById('sum-adv').innerText = `ADV: ${portfolioHealth.advance} (${Math.round(portfolioHealth.advance / total * 100)}%)`;
+            document.getElementById('sum-norm').innerText = `NORM: ${portfolioHealth.normal} (${Math.round(portfolioHealth.normal / total * 100)}%)`;
+            document.getElementById('sum-delay').innerText = `DELAY: ${portfolioHealth.delay} (${Math.round(portfolioHealth.delay / total * 100)}%)`;
+
+            updateVisuals(portfolioHealth, pStats, sectionScores, colMap, rows, solMap);
+        }
+
+        function updateVisuals(health, pStats, secScores, colMap, rows, solMap) {
+            const reset = (id) => { if (charts[id]) charts[id].destroy(); };
+            const baseOpt = {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, labels: { boxWidth: 10, font: { size: 9, weight: 'bold' } } },
+                    datalabels: {
+                        display: true, color: '#fff', font: { weight: 'bold', size: 9 }, formatter: (v, ctx) => {
+                            let sum = ctx.dataset.data.reduce((a, b) => a + Math.abs(b), 0);
+                            return sum > 0 ? Math.round((v / sum) * 100) + '%' : '';
+                        }
+                    }
+                }
+            };
+
+            reset('h');
+            charts.h = new Chart(document.getElementById('healthChart'), {
+                type: 'doughnut',
+                data: { labels: ['Advance', 'Normal', 'Delay'], datasets: [{ data: [health.advance, health.normal, health.delay], backgroundColor: [colors.olive, colors.gold, colors.rust] }] },
+                options: baseOpt
+            });
+
+            reset('pr');
+            charts.pr = new Chart(document.getElementById('phaseRankingChart'), {
+                type: 'bar',
+                data: {
+                    labels: pStats.map(p => p.name), datasets: [
+                        { label: 'Adv', data: pStats.map(p => p.advance), backgroundColor: colors.olive },
+                        { label: 'Norm', data: pStats.map(p => p.normal), backgroundColor: colors.gold },
+                        { label: 'Delay', data: pStats.map(p => p.delay), backgroundColor: colors.rust }
+                    ]
+                },
+                options: { ...baseOpt, scales: { x: { stacked: true, ticks: { font: { size: 8 } } }, y: { stacked: true } } }
+            });
+
+            reset('ss');
+            const sLabels = Object.keys(secScores).sort((a, b) => secScores[b] - secScores[a]);
+            charts.ss = new Chart(document.getElementById('sectionScoreChart'), {
+                type: 'bar',
+                data: { labels: sLabels, datasets: [{ label: 'Performance Score', data: sLabels.map(l => secScores[l]), backgroundColor: colors.taupe }] },
+                options: { ...baseOpt, indexAxis: 'y', plugins: { ...baseOpt.plugins, datalabels: { color: '#fff', formatter: v => v } } }
+            });
+
+            reset('v');
+            charts.v = new Chart(document.getElementById('bottleneckChart'), {
+                type: 'bar',
+                data: { labels: pStats.map(p => p.name), datasets: [{ label: 'Avg Days', data: pStats.map(p => (p.totalDiff / (p.count || 1)).toFixed(1)), backgroundColor: (c) => c.raw > 0 ? colors.rust : colors.olive }] },
+                options: { ...baseOpt, scales: { x: { ticks: { font: { size: 8 } } } }, plugins: { ...baseOpt.plugins, datalabels: { color: '#333', anchor: 'end', align: 'top', formatter: v => v } } }
+            });
+
+            reset('r');
+            charts.r = new Chart(document.getElementById('radarChart'), {
+                type: 'radar',
+                data: { labels: pStats.map(p => p.name), datasets: [{ label: 'Success %', data: pStats.map(p => p.count > 0 ? Math.round(((p.advance + p.normal) / p.count) * 100) : 0), borderColor: colors.olive, backgroundColor: 'rgba(85,139,47,0.1)' }] },
+                options: { ...baseOpt, plugins: { ...baseOpt.plugins, datalabels: { display: false } }, scales: { r: { min: 0, max: 100, pointLabels: { font: { size: 8 } } } } }
+            });
+
+            reset('t');
+            let teamMap = {};
+            rows.forEach(r => {
+                const team = r[colMap.team] || "Unknown";
+                if (!teamMap[team]) teamMap[team] = { late: 0, ok: 0 };
+                (r[colMap.status] || "").toString().includes("Delayed") ? teamMap[team].late++ : teamMap[team].ok++;
+            });
+            charts.t = new Chart(document.getElementById('teamChart'), {
+                type: 'bar',
+                data: { labels: Object.keys(teamMap), datasets: [{ label: 'Late', data: Object.values(teamMap).map(v => v.late), backgroundColor: colors.rust }, { label: 'OK', data: Object.values(teamMap).map(v => v.ok), backgroundColor: colors.olive }] },
+                options: { ...baseOpt, scales: { x: { stacked: true }, y: { stacked: true } } }
+            });
+
+            reset('sol');
+            charts.sol = new Chart(document.getElementById('solutionChart'), {
+                type: 'pie',
+                data: { labels: Object.keys(solMap), datasets: [{ data: Object.values(solMap), backgroundColor: [colors.rust, colors.taupe, colors.gold, colors.olive] }] },
+                options: baseOpt
+            });
+        }
+    </script>
+</body>
+
+</html>

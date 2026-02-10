@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPARK Executive Dashboard | Performance</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* --- EARTH TONE PALETTE --- */
+        :root {
+            --bg-color: #F4F1EA;
+            /* Warm Beige */
+            --header-bg: #4E342E;
+            /* Dark Espresso */
+            --card-bg: #FFFFFF;
+            /* White */
+            --text-main: #3E2723;
+            /* Dark Brown Text */
+            --taupe-accent: #8D6E63;
+            /* Neutral Taupe */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--header-bg);
+            color: #F4F1EA;
+            padding: 0 20px;
+            height: 50px;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #F4F1EA;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 5px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Dashboard Container */
+        .dashboard-container {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            /* Centers the content */
+        }
+
+        /* MAX WIDTH WRAPPER (Prevents graphs from getting too wide) */
+        .width-wrapper {
+            width: 100%;
+            max-width: 1400px;
+            /* Limits width on big screens */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* SharePoint Section */
+        .iframe-section {
+            height: 420px;
+            background: var(--card-bg);
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .iframe-section.hidden {
+            height: 0;
+            margin: 0;
+            border: none;
+        }
+
+        /* Visuals Grid (3 Columns is better for width control) */
+        .visuals-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            /* 3 Columns */
+            gap: 15px;
+            padding-bottom: 20px;
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+            border-top: 3px solid var(--taupe-accent);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .span-2 {
+            grid-column: span 2;
+        }
+
+        .chart-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--taupe-accent);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            /* Fixed Height */
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>SPARK Project | Executive Dashboard</h1>
+        <div class="btn-group">
+            <button class="btn" onclick="toggleIframe()" id="toggleBtn">Hide KPI Overview</button>
+            <button class="btn" onclick="location.reload()">Refresh</button>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="width-wrapper">
+
+            <div class="iframe-section" id="kpiSection">
+                <iframe
+                    src="https://toyotaasia.sharepoint.com/teams/H4TeamEstablishment/_layouts/15/Doc.aspx?sourcedoc={a7fbeb52-43bd-484d-b8c8-c76dd6b4c908}&action=embedview&wdAllowInteractivity=True&Item=Table2&wdHideGridlines=True&wdDownloadButton=True">
+                </iframe>
+            </div>
+
+            <div class="visuals-grid">
+
+                <div class="chart-card">
+                    <div class="chart-title">Project Health</div>
+                    <div class="chart-container">
+                        <canvas id="healthChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card span-2">
+                    <div class="chart-title">Bottleneck (Avg Days Delay)</div>
+                    <div class="chart-container">
+                        <canvas id="bottleneckChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">Section Efficiency (Avg Days Saved)</div>
+                    <div class="chart-container">
+                        <canvas id="sectionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card span-2">
+                    <div class="chart-title">SLA Reliability Scorecard</div>
+                    <div class="chart-container">
+                        <canvas id="complianceChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">Team Issues</div>
+                    <div class="chart-container">
+                        <canvas id="sparkChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card span-2">
+                    <div class="chart-title">Solution Issues</div>
+                    <div class="chart-container">
+                        <canvas id="solutionChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleIframe() {
+            const section = document.getElementById('kpiSection');
+            const btn = document.getElementById('toggleBtn');
+            if (section.classList.contains('hidden')) {
+                section.classList.remove('hidden');
+                btn.innerText = "Hide KPI Overview";
+            } else {
+                section.classList.add('hidden');
+                btn.innerText = "Show KPI Overview";
+            }
+        }
+
+        // --- COLORS ---
+        const c = { rust: '#BF360C', olive: '#558B2F', taupe: '#8D6E63', sand: '#D7CCC8', gold: '#FFB74D', dark: '#3E2723' };
+
+        // Legend Config
+        const commonLegend = {
+            display: true, position: 'right',
+            labels: { boxWidth: 8, font: { size: 9 }, color: '#333' }
+        };
+
+        // 1. HEALTH (Doughnut)
+        new Chart(document.getElementById('healthChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Delayed', 'On Track'],
+                datasets: [{ data: [10, 1], backgroundColor: [c.rust, c.olive], borderWidth: 0 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: commonLegend }, cutout: '60%'
+            }
+        });
+
+        // 2. BOTTLENECK (Bar)
+        new Chart(document.getElementById('bottleneckChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Quote', 'Contact', 'HO Dev', 'Inst Dev', 'Inst Prod', 'HO Prod', 'Solution', 'Onboard', 'Security'],
+                datasets: [{
+                    label: 'Days',
+                    data: [2.6, -0.1, -0.1, -0.4, -0.5, -2.4, -6.6, -8.9, -18.7],
+                    backgroundColor: (ctx) => ctx.raw > 0 ? c.rust : c.olive,
+                    borderRadius: 3
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Horizontal
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 9 } } },
+                    y: { grid: { display: false }, ticks: { font: { size: 9 } } }
+                }
+            }
+        });
+
+        // 3. SECTION EFFICIENCY (Bar)
+        new Chart(document.getElementById('sectionChart'), {
+            type: 'bar',
+            data: {
+                labels: ['EES/PLS', 'TC', 'EES', 'DMT', 'PLS'],
+                datasets: [{
+                    label: 'Saved',
+                    data: [5.8, 4.3, 4.0, 3.7, 3.6],
+                    backgroundColor: c.taupe,
+                    borderRadius: 3
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 9 } } } }
+            }
+        });
+
+        // 4. RELIABILITY (Radar)
+        new Chart(document.getElementById('complianceChart'), {
+            type: 'radar',
+            data: {
+                labels: ['Quote', 'I-Dev', 'Contact', 'H-Dev', 'H-Prod', 'I-Prod', 'Onboard', 'Security', 'Solution'],
+                datasets: [{
+                    label: '% On Time',
+                    data: [18, 82, 91, 91, 100, 100, 100, 100, 100],
+                    backgroundColor: 'rgba(191, 54, 12, 0.2)', borderColor: c.rust, pointBackgroundColor: c.rust, borderWidth: 1.5
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: true, position: 'right', labels: { boxWidth: 6, font: { size: 9 } } } },
+                scales: { r: { ticks: { display: false }, pointLabels: { font: { size: 9 } } } }
+            }
+        });
+
+        // 5. TEAM (Doughnut)
+        new Chart(document.getElementById('sparkChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['ITO', 'SPARK', 'Char', 'Jnt'],
+                datasets: [{ data: [4, 4, 1, 1], backgroundColor: [c.dark, c.taupe, c.gold, c.sand], borderWidth: 0 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: commonLegend }, cutout: '55%'
+            }
+        });
+
+        // 6. SOLUTION (Bar - Stacked)
+        new Chart(document.getElementById('solutionChart'), {
+            type: 'bar',
+            data: {
+                labels: ['On-Prem', 'DSP', 'AWS', 'Azure'],
+                datasets: [
+                    { label: 'Late', data: [5, 2, 1, 1], backgroundColor: c.rust },
+                    { label: 'OK', data: [0, 0, 1, 0], backgroundColor: c.olive }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: true, position: 'right', labels: { boxWidth: 6, font: { size: 9 } } } },
+                scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { display: false } } }
+            }
+        });
+
+    </script>
+</body>
+
+</html>
