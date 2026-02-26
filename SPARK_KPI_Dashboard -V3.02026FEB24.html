@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>SPARK | EXECUTIVE KPI DASHBOARD V.3.0 2026FEB24 - Enhanced  (Add Project Cost)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg: #F4F1EA;
+            --header: #4E342E;
+            --card: #FFFFFF;
+            --text: #3E2723;
+            --rust: #BF360C;
+            --olive: #558B2F;
+            --taupe: #8D6E63;
+            --blue: #2E5A88;
+            /* Blue Earthtone */
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: var(--header);
+            color: #F4F1EA;
+            padding: 10px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .controls {
+            background: #E7E0D2;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-bottom: 1px solid #D7CCC8;
+            gap: 8px;
+        }
+
+        .controls-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .tab-selector {
+            background: #FFFFFF;
+            border: 1px solid var(--taupe);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text);
+            transition: all 0.3s;
+        }
+
+        .tab-selector.active {
+            background: var(--taupe);
+            color: #FFFFFF;
+        }
+
+        .tab-container {
+            display: none;
+        }
+
+        .tab-container.active {
+            display: block;
+        }
+
+        .quarter-selector {
+            background: #FFFFFF;
+            border: 1px solid var(--taupe);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .summary-box {
+            background: #FFFFFF;
+            border: 1px solid var(--taupe);
+            padding: 8px 15px;
+            border-radius: 4px;
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .vp-note-container {
+            background: #FFF8E1;
+            border: 1px solid #FFECB3;
+            padding: 12px 20px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #5D4037;
+            width: 100%;
+            max-width: 950px;
+            line-height: 1.5;
+            display: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .file-label {
+            background: var(--taupe);
+            color: white;
+            padding: 6px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .tabs-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .dashboard-container {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .width-limiter {
+            width: 100%;
+            max-width: 1250px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .grid-main {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 15px;
+        }
+
+        .grid-sub {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 4px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid var(--taupe);
+        }
+
+        .chart-title {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--header);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .chart-h {
+            height: 220px;
+            width: 100%;
+        }
+
+        .pmo-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: #eee;
+            color: #666;
+            font-weight: normal;
+        }
+
+        .legend-box {
+            background: #FFF8F0;
+            border: 1px solid #E8D4C3;
+            border-radius: 4px;
+            padding: 10px 15px;
+            font-size: 10px;
+            line-height: 1.6;
+            color: #5D4037;
+            margin-top: 10px;
+        }
+
+        .legend-title {
+            font-weight: 700;
+            color: var(--header);
+            margin-bottom: 5px;
+            font-size: 11px;
+        }
+
+        .info-row {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 3px;
+        }
+
+        .info-row strong {
+            min-width: 80px;
+        }
+
+        .size-criteria-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .size-criteria-box {
+            background: #F5F5F5;
+            border: 1px solid #DDD;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 10px;
+        }
+
+        .size-criteria-title {
+            font-weight: 700;
+            color: var(--header);
+            margin-bottom: 5px;
+            font-size: 11px;
+        }
+
+        .size-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        .size-item:last-child {
+            border-bottom: none;
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .grid-center {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .card-center {
+            max-width: 500px;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>SPARK | EXECUTIVE KPI DASHBOARD V.3.0 2026FEB24 - Enhanced  (Add Project Cost)</h1>
+        <div id="status" style="font-size: 11px; font-weight: 300;">Status: Ready</div>
+    </div>
+
+    <div class="controls">
+        <div class="controls-row">
+            <label class="file-label" for="fileInput">Upload KPI Data</label>
+            <input type="file" id="fileInput" style="display: none;" accept=".xlsx, .xls">
+            <div class="summary-box" id="summaryCell">
+                <span style="color:var(--taupe)">PORTFOLIO HEALTH:</span>
+                <span id="sum-norm" style="color:var(--olive)">ON TIME: -</span>
+                <span id="sum-delay" style="color:var(--rust)">DELAY: -</span>
+            </div>
+        </div>
+        <div class="tabs-row">
+            <button class="tab-selector active" data-tab="dashboard1">PMO Health</button>
+            <button class="tab-selector" data-tab="dashboard2">Cost-Based Size</button>
+            <button class="tab-selector" data-tab="dashboard3">Solution & Quarter</button>
+        </div>
+        <div class="vp-note-container" id="vpNoteBox">
+            <div id="noteText">Analyzing coordination data...</div>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="width-limiter">
+
+            <!-- TAB 1: PMO Health Dashboard -->
+            <div id="dashboard1" class="tab-container active">
+            <div class="grid-sub">
+                <div class="card">
+                    <div class="chart-title">Overall Health <span class="pmo-badge">All Projects</span></div>
+                    <div class="chart-h"><canvas id="healthChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="chart-title">Current Pipeline <span class="pmo-badge">Status Stages</span></div>
+                    <div class="chart-h"><canvas id="pipelineChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="chart-title">Milestone Success Rate %</div>
+                    <div class="chart-h"><canvas id="radarChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="grid-main">
+                <div class="card">
+                    <div class="chart-title">Section Efficiency (%) <span class="pmo-badge">Baseline 100% (Qty:
+                            n)</span></div>
+                    <div class="chart-h"><canvas id="sectionScoreChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="chart-title">Milestone Status Ranking <span class="pmo-badge">Total Task Count</span>
+                    </div>
+                    <div class="chart-h"><canvas id="phaseRankingChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="grid-sub">
+                <div class="card">
+                    <div class="chart-title">Avg Days Variance <span class="pmo-badge">+/- Days</span></div>
+                    <div class="chart-h"><canvas id="bottleneckChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="chart-title">Team Distribution <span class="pmo-badge">Dynamic Source</span></div>
+                    <div class="chart-h"><canvas id="teamChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="chart-title">Late Issue Risk Breakdown</div>
+                    <div class="chart-h"><canvas id="solutionChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="grid-center">
+                <div class="card card-center" style="max-width: 900px;">
+                    <div class="chart-title">Section Efficiency (%) Baseline 100% Triple Analysis <span class="pmo-badge"
+                            id="sectionEffQtyBadge">Qty: -</span></div>
+                    <div class="chart-h" style="height: 700px;"><canvas id="sectionEfficiencyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                style="font-size:8px; color:#555; padding: 10px; background: #fff; border-radius: 4px; border: 1px solid #ddd; line-height: 1.4;">
+                Requirement Gathering : Contact (SLA = 1 Day) → <strong>REQ-C:1D</strong><br>
+                Solution and Budgetary : Solution and budgetary (SLA = 14 Day) → <strong>SOL-BUD:14D</strong><br>
+                Proposal/PR&PO Approve : Request Quotation (SLA = 3 Day) → <strong>PROP-RQ:3D</strong><br>
+                Implement : Vendor Onboarding (SLA = 14 Day) → <strong>IMP-VOB:14D</strong><br>
+                Implement : Security (SLA = 14 Day) → <strong>IMP-SEC:14D</strong><br>
+                Hand Over : Sign off Installation - Dev (SLA = 2 Days) → <strong>HO-INST-DEV:2D</strong><br>
+                Hand Over : Sign off H/O - Dev (SLA = 2 Days) → <strong>HO-DEV:2D</strong><br>
+                Hand Over : Sign off Installation - Prod (SLA = 2 Days) → <strong>HO-INST-PROD:2D</strong><br>
+                Hand Over : Sign off H/O - Prod (SLA = 2 Days) → <strong>HO-PROD:2D</strong>
+            </div>
+
+            <div class="legend-box">
+                <div class="legend-title">📌 PMO Health Dashboard Legend</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <div class="info-row"><strong>On Time:</strong> Projects delivered on or before SLA target date</div>
+                        <div class="info-row"><strong>Delay:</strong> Projects with one or more delayed milestones</div>
+                        <div class="info-row"><strong>Section:</strong> Business divisions managing projects (PPE, TMA-SG, TC, DMS, PCS, EES)</div>
+                    </div>
+                    <div>
+                        <div class="info-row"><strong>Efficiency %:</strong> Percentage of days saved/lost vs baseline (100%)</div>
+                        <div class="info-row"><strong>Success Rate:</strong> Percentage of milestones delivered on or ahead of schedule</div>
+                        <div class="info-row"><strong>Days Variance:</strong> Average days delayed (+) or saved (-) per phase</div>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- TAB 2: Cost-Based Size Ranking Dashboard -->
+            <div id="dashboard2" class="tab-container">
+            <div class="grid-center">
+                <div class="card card-center">
+                    <div class="chart-title">Total Cost Distribution <span class="pmo-badge">By Solution Type - Project Qty</span></div>
+                    <div class="chart-h"><canvas id="costDistributionChart"></canvas></div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; justify-content: center;">
+                        <div style="background: #F5F5F5; border-left: 4px solid #8D6E63; padding: 8px 12px; border-radius: 4px; text-align: center;">
+                            <div style="font-size: 10px; color: #666; font-weight: 600;">TOTAL ON-PREMISE</div>
+                            <div id="totalOnPremDist" style="font-size: 14px; font-weight: 800; color: #8D6E63;">0</div>
+                        </div>
+                        <div style="background: #F5F5F5; border-left: 4px solid #2E5A88; padding: 8px 12px; border-radius: 4px; text-align: center;">
+                            <div style="font-size: 10px; color: #666; font-weight: 600;">TOTAL PUBLIC CLOUD</div>
+                            <div id="totalPublicCloudDist" style="font-size: 14px; font-weight: 800; color: #2E5A88;">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2col">
+                <div class="card">
+                    <div class="chart-title">On-Premise: Cost-Based Size Ranking <span class="pmo-badge">Project Qty</span></div>
+                    <div class="chart-h"><canvas id="onpremSizeChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="chart-title">Public Cloud: Cost-Based Size Ranking <span class="pmo-badge">Project Qty</span></div>
+                    <div class="chart-h"><canvas id="cloudSizeChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="grid-2col">
+                <div class="card">
+                    <div class="chart-title">On-Premise: Cost Metrics by Size <span class="pmo-badge">Triple Cost Analysis</span></div>
+                    <div class="chart-h"><canvas id="onpremCostMetricsChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="chart-title">Public Cloud: Cost Metrics by Size <span class="pmo-badge">Triple Cost Analysis</span></div>
+                    <div class="chart-h"><canvas id="cloudCostMetricsChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="legend-box" style="width: 100%; max-width: 100%;">
+                <div class="legend-title">📌 Size Criteria for Cost-Based Ranking</div>
+                <div class="size-criteria-grid">
+                    <div class="size-criteria-box">
+                        <div class="size-criteria-title">On-Premise Size Bracket</div>
+                        <div class="size-item"><span>S (Small)</span> <strong>&lt; 2M THB</strong></div>
+                        <div class="size-item"><span>M (Medium)</span> <strong>2-4M THB</strong></div>
+                        <div class="size-item"><span>L (Large)</span> <strong>4-6M THB</strong></div>
+                        <div class="size-item"><span>XL (Extra Large)</span> <strong>&gt; 6M THB</strong></div>
+                    </div>
+                    <div class="size-criteria-box">
+                        <div class="size-criteria-title">Public Cloud Size Bracket</div>
+                        <div class="size-item"><span>S (Small)</span> <strong>&lt; 1M THB</strong></div>
+                        <div class="size-item"><span>M (Medium)</span> <strong>1-2.5M THB</strong></div>
+                        <div class="size-item"><span>L (Large)</span> <strong>2.5-5M THB</strong></div>
+                        <div class="size-item"><span>XL (Extra Large)</span> <strong>&gt; 5M THB</strong></div>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #D7CCC8;">
+                    <div class="info-row"><strong>THB:</strong> Thai Baht (Currency)</div>
+                    <div class="info-row"><strong>Total Cost:</strong> Sum of Implement + Running costs</div>
+                    <div class="info-row"><strong>Implementation Cost:</strong> One-time setup/purchase investment</div>
+                </div>
+            </div>
+            </div>
+
+            <!-- TAB 3: Solution Type & Quarter Dashboard -->
+            <div id="dashboard3" class="tab-container">
+            <div style="text-align: center; margin-bottom: 15px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                <div>
+                    <label for="quarterFilter" style="font-weight: 600; margin-right: 10px;">Filter by Fiscal Quarter (APR-MAR):</label>
+                    <select id="quarterFilter" class="quarter-selector">
+                        <option value="">All Quarters</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="solutionTypeFilter" style="font-weight: 600; margin-right: 10px;">Filter by Solution Type:</label>
+                    <select id="solutionTypeFilter" class="quarter-selector">
+                        <option value="All">All Solutions</option>
+                        <option value="On-Premise">On-Premise Only</option>
+                        <option value="Public Cloud">Public Cloud Only</option>
+                        <option value="AWS">AWS</option>
+                        <option value="Azure">Azure</option>
+                        <option value="GCP">GCP</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-2col">
+                <div class="card">
+                    <div class="chart-title">Project Quantity by Solution Type <span class="pmo-badge">Filtered View</span></div>
+                    <div class="chart-h"><canvas id="solutionTypeChart"></canvas></div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; justify-content: center;">
+                        <div style="background: #F5F5F5; border-left: 4px solid #8D6E63; padding: 8px 12px; border-radius: 4px; text-align: center;">
+                            <div style="font-size: 10px; color: #666; font-weight: 600;">ON-PREMISE</div>
+                            <div id="onPremQty" style="font-size: 14px; font-weight: 800; color: #8D6E63;">0</div>
+                        </div>
+                        <div style="background: #F5F5F5; border-left: 4px solid #2E5A88; padding: 8px 12px; border-radius: 4px; text-align: center;">
+                            <div style="font-size: 10px; color: #666; font-weight: 600;">PUBLIC CLOUD</div>
+                            <div id="pubCloudQty" style="font-size: 14px; font-weight: 800; color: #2E5A88;">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="chart-title">Project Quantity by Solution & Quarter <span class="pmo-badge">Stacked View</span></div>
+                    <div class="chart-h"><canvas id="quarterStackedChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="grid-2col">
+                <div class="card">
+                    <div class="chart-title">Implementation Cost by Quarter <span class="pmo-badge">One-time Invest</span></div>
+                    <div class="chart-h"><canvas id="implCostChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="chart-title">Average Project Cost by Solution <span class="pmo-badge">Total Cost</span></div>
+                    <div class="chart-h"><canvas id="avgCostChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="grid-2col">
+                <div class="card">
+                    <div class="chart-title">Project Activity Trend <span class="pmo-badge">Planned vs Actual Dates</span></div>
+                    <div class="chart-h"><canvas id="projectActivityChart"></canvas></div>
+                </div>
+                <div class="card" style="visibility: hidden;"></div>
+            </div>
+
+            <div class="legend-box">
+                <div class="legend-title">📌 Solution & Quarter Dashboard Legend</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <div class="info-row"><strong>THB:</strong> Thai Baht (Currency)</div>
+                        <div class="info-row"><strong>FY2025-Q4:</strong> Fiscal Year 2025, Quarter 4 (Jan-Mar 2025)</div>
+                        <div class="info-row"><strong>FY2026-Q1:</strong> Fiscal Year 2026, Quarter 1 (Apr-Jun 2025)</div>
+                    </div>
+                    <div>
+                        <div class="info-row"><strong>Implementation Cost:</strong> One-time project setup/purchase investment</div>
+                        <div class="info-row"><strong>Running Cost:</strong> Recurring monthly/annual subscription fees</div>
+                        <div class="info-row"><strong>Active Projects:</strong> Projects with activity in the selected quarter</div>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #D7CCC8; font-size: 10px;">
+                    <div class="info-row"><strong>Fiscal Quarter:</strong> APR-MAR period (Japan fiscal year style)</div>
+                    <div class="info-row"><strong>Planned vs Actual:</strong> Scheduled vs. executed project dates</div>
+                </div>
+            </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        Chart.register(ChartDataLabels);
+        let charts = {};
+        let rawProjectData = [];
+        let allQuarters = [];
+        let selectedQuarter = '';
+        let selectedSolutionType = 'All';
+
+        // Colors updated to Blue Earthtone Theme
+        const colors = { rust: '#BF360C', olive: '#558B2F', taupe: '#8D6E63', blue: '#2E5A88' };
+        const pmoPhases = ["REQ-C:1D", "SOL-BUD:14D", "PROP-RQ:3D", "IMP-VOB:14D", "IMP-SEC:14D", "HO-INST-DEV:2D", "HO-DEV:2D", "HO-INST-PROD:2D", "HO-PROD:2D"];
+
+        // Tab switching
+        document.querySelectorAll('.tab-selector').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.tab-selector').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-container').forEach(tc => tc.classList.remove('active'));
+                e.target.classList.add('active');
+                const tab = e.target.getAttribute('data-tab');
+                document.getElementById(tab).classList.add('active');
+            });
+        });
+
+        // Quarter filter
+        document.getElementById('quarterFilter').addEventListener('change', (e) => {
+            selectedQuarter = e.target.value;
+            updateDashboard3Visuals();
+        });
+
+        // Solution Type filter
+        document.getElementById('solutionTypeFilter').addEventListener('change', (e) => {
+            selectedSolutionType = e.target.value;
+            updateDashboard3Visuals();
+        });
+
+        // Helper function to get fiscal quarter (APR-MAR)
+        function getFiscalQuarter(date) {
+            const month = date.getMonth(); // 0=Jan, 3=Apr, etc
+            const year = date.getFullYear();
+            if (month >= 3) { // April to December
+                return `FY${year + 1}-Q${Math.floor((month - 3) / 3) + 1}`;
+            } else { // January to March
+                return `FY${year}-Q${Math.floor((month + 9) / 3) + 1}`;
+            }
+        }
+
+        function getProjectSizeBracket(totalCost, solutionType) {
+            const cost = parseFloat(totalCost) || 0;
+            if (solutionType && solutionType.toLowerCase().includes('cloud')) {
+                if (cost < 1000000) return 'S';
+                if (cost < 2500000) return 'M';
+                if (cost < 5000000) return 'L';
+                return 'XL';
+            } else { // On-Premise
+                if (cost < 2000000) return 'S';
+                if (cost < 4000000) return 'M';
+                if (cost < 6000000) return 'L';
+                return 'XL';
+            }
+        }
+
+        function parseDate(val) {
+            let d;
+            if (val instanceof Date) d = val;
+            else if (typeof val === 'number') d = new Date((val - 25569) * 86400 * 1000);
+            else if (typeof val === 'string' && val.trim() !== "") d = new Date(val.replace(/\//g, '-'));
+            if (d && !isNaN(d.getTime())) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            return null;
+        }
+
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const wb = XLSX.read(ev.target.result, { type: 'array', cellDates: true });
+                const sheetName = wb.SheetNames.find(n => n.trim().toUpperCase() === "KPI") || wb.SheetNames[0];
+                const data = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1 });
+                processData(data);
+                document.getElementById('status').innerText = "LIVE DATA: " + file.name;
+                document.getElementById('vpNoteBox').style.display = 'block';
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function processData(data) {
+            const hIdx = data.findIndex(r => r.some(c => c && c.toString().includes("No.")));
+            const headers = data[hIdx].map(h => h ? h.toString().trim() : "");
+            const subHeaders = data[hIdx + 1] ? data[hIdx + 1].map(h => h ? h.toString().trim() : "") : [];
+
+            // Updated column mapping to include new columns H-O
+            const colMap = {
+                section: headers.indexOf("Section"),
+                project: headers.indexOf("Project Name"),
+                currentStage: headers.findIndex(h => h === "Current" || h === "Next Action"),
+                team: headers.findIndex(h => h && h.toString().includes("SPARK")),
+                solution: headers.indexOf("Solution"),
+                projectStatus: headers.indexOf("Project Status"), // Column M
+                projectSize: headers.findIndex(h => h && h.toString().includes("Project Size")), // Column I
+                totalCost: headers.indexOf("Total Cost"), // Column J
+                implementCost: headers.indexOf("Implement Cost"), // Column K
+                runningCost: headers.findIndex(h => h && (h.toString().toLowerCase().includes("subscription") || h.toString().toLowerCase().includes("running cost"))), // Column L
+                remark1: headers.findIndex(h => h && h.toString().includes("Remark1")), // Column N
+                remark2: headers.findIndex(h => h && h.toString().includes("Remark2")), // Column O
+                remark3: headers.findIndex(h => h && h.toString().includes("Remark3")) // Column P
+            };
+
+            let phaseCols = [];
+            subHeaders.forEach((h, idx) => { if (h === "SLA Status") phaseCols.push({ s: idx - 3, t: idx - 2, a: idx - 1 }); });
+            const activePhases = phaseCols.slice(0, 9);
+            const rows = data.slice(hIdx + 2).filter(r => r[colMap.project]);
+
+            // Process all data for filter options
+            let quartersSet = new Set();
+            rawProjectData = rows.map((r, idx) => {
+                const startDate = parseDate(r[activePhases[0]?.s]);
+                const quarter = startDate ? getFiscalQuarter(startDate) : 'Unknown';
+                quartersSet.add(quarter);
+                return {
+                    index: idx,
+                    project: r[colMap.project],
+                    solution: r[colMap.solution] || "Unknown",
+                    totalCost: parseFloat(r[colMap.totalCost]) || 0,
+                    implementCost: parseFloat(r[colMap.implementCost]) || 0,
+                    runningCost: parseFloat(r[colMap.runningCost]) || 0,
+                    projectStatus: r[colMap.projectStatus] || "Unknown",
+                    startDate: startDate,
+                    quarter: quarter,
+                    actualDate: parseDate(r[activePhases[0]?.a]),
+                    row: r,
+                    colMap: colMap,
+                    activePhases: activePhases
+                };
+            });
+
+            allQuarters = Array.from(quartersSet).sort();
+            
+            // Update quarter filter dropdown
+            const quarterFilter = document.getElementById('quarterFilter');
+            const currentValue = quarterFilter.value;
+            quarterFilter.innerHTML = '<option value="">All Quarters</option>';
+            allQuarters.forEach(q => {
+                const opt = document.createElement('option');
+                opt.value = q;
+                opt.textContent = q;
+                quarterFilter.appendChild(opt);
+            });
+            quarterFilter.value = currentValue || '';
+            selectedQuarter = currentValue || '';
+
+            let portHealth = { normal: 0, delay: 0, advance: 0 };
+            let pStats = activePhases.map((p, i) => ({ name: pmoPhases[i], advance: 0, normal: 0, delay: 0, totalDiff: 0, count: 0, maxDelay: 0 }));
+            let sectionEffs = {}; let sectionStatus = {}; let solMap = {}; let pipeMap = {}; let teamMap = {};
+
+            rows.forEach(r => {
+                let hasDelay = false; let hasAdvance = false; let pX = 0; let pY = 0; let loggedPhases = 0;
+                const stage = r[colMap.currentStage] || "Unknown";
+                pipeMap[stage] = (pipeMap[stage] || 0) + 1;
+                const tName = r[colMap.team] || "Unassigned";
+                if (!teamMap[tName]) teamMap[tName] = { late: 0, ok: 0 };
+
+                activePhases.forEach((p, i) => {
+                    const start = parseDate(r[p.s]), target = parseDate(r[p.t]), actual = parseDate(r[p.a]);
+                    if (target && actual) {
+                        loggedPhases++;
+                        const daysVar = Math.round((actual.getTime() - target.getTime()) / 86400000);
+                        pStats[i].totalDiff += daysVar; pStats[i].count++;
+
+                        pX += Math.round((target.getTime() - actual.getTime()) / 86400000); // Days saved
+                        if (start) pY += Math.round((target.getTime() - start.getTime()) / 86400000); // Total SLA Duration
+
+                        if (daysVar > 0) {
+                            pStats[i].delay++; hasDelay = true; if (daysVar > pStats[i].maxDelay) pStats[i].maxDelay = daysVar;
+                            const sol = r[colMap.solution] || "Other"; solMap[sol] = (solMap[sol] || 0) + 1;
+                        } else if (daysVar < 0) {
+                            pStats[i].advance++;
+                            hasAdvance = true;
+                        }
+                        else pStats[i].normal++;
+                    }
+                });
+
+                if (hasDelay) { portHealth.delay++; teamMap[tName].late++; }
+                else if (hasAdvance) { portHealth.advance++; teamMap[tName].ok++; }
+                else { portHealth.normal++; teamMap[tName].ok++; }
+
+                if (loggedPhases > 0 && pY > 0) {
+                    const sec = r[colMap.section] || "Unknown";
+                    if (!sectionEffs[sec]) sectionEffs[sec] = { x: 0, y: 0, qty: 0 };
+                    if (!sectionStatus[sec]) sectionStatus[sec] = { onTime: 0, delay: 0, advance: 0, qty: 0 };
+                    
+                    sectionEffs[sec].x += pX;
+                    sectionEffs[sec].y += pY;
+                    sectionEffs[sec].qty++;
+                    
+                    if (hasDelay) sectionStatus[sec].delay++;
+                    else if (hasAdvance) sectionStatus[sec].advance++;
+                    else sectionStatus[sec].onTime++;
+                    sectionStatus[sec].qty++;
+                }
+            });
+
+            // Executive Note Logic
+            let worst = pStats.reduce((prev, curr) => (curr.delay > prev.delay) ? curr : prev);
+            let best = pStats.reduce((prev, curr) => ((curr.advance + curr.normal) / (curr.count || 1) > (prev.advance + prev.normal) / (prev.count || 1)) ? curr : prev);
+            const proRate = Math.round(((best.advance + best.normal) / (best.count || 1)) * 100);
+
+            document.getElementById('noteText').innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+                    <div><strong style="color:var(--olive)">● Strength:</strong> High stability in <strong>${best.name.split(':')[0]}</strong> (${proRate}% reliability). ${best.advance} projects delivered ahead of SLA.</div>
+                    <div><strong style="color:var(--rust)">● Highlight:</strong> Found ${portHealth.delay} projects delayed. Friction point identified in <strong>${worst.name.split(':')[0]}</strong> stage (Max Delay: ${worst.maxDelay} days).</div>
+                </div>
+                <div style="margin-top: 8px; border-top: 1px dashed #ddd; padding-top: 5px;"><strong>Summary:</strong> SPARK is currently managing a ${Math.round(portHealth.normal / rows.length * 100)}% stable portfolio. Performance recovery plans focused on ${worst.name.split(':')[0]} are underway.</div>`;
+
+            let finalScores = {};
+            for (const s in sectionEffs) {
+                const data = sectionEffs[s];
+                const pct = 100 + ((data.x / data.y) * 100); // 100% Baseline Logic
+                finalScores[s] = { pct: pct, days: data.x, qty: data.qty };
+            }
+
+            document.getElementById('sum-norm').innerText = `ON TIME: ${portHealth.normal + portHealth.advance}`;
+            document.getElementById('sum-delay').innerText = `DELAY: ${portHealth.delay}`;
+
+            updateDashboard1Visuals(portHealth, pStats, finalScores, pipeMap, teamMap, solMap, sectionStatus);
+            updateDashboard2Visuals();
+            updateDashboard3Visuals();
+        }
+
+        function updateDashboard1Visuals(health, pStats, secData, pipeMap, teamMap, solMap, sectionStatus) {
+            const reset = (id) => { if (charts[id]) charts[id].destroy(); };
+            const baseOpt = {
+                responsive: true, maintainAspectRatio: false, plugins: {
+                    legend: { display: true, labels: { boxWidth: 10, font: { size: 9 } } }, datalabels: {
+                        display: true, color: '#fff', font: { weight: 'bold', size: 9 }, formatter: (v, ctx) => {
+                            if (["sectionScoreChart", "pipelineChart", "teamChart"].includes(ctx.chart.canvas.id)) return null;
+                            let sum = ctx.dataset.data.reduce((a, b) => a + Math.abs(b), 0);
+                            return sum > 0 ? Math.round((v / sum) * 100) + '%' : '';
+                        }
+                    }
+                }
+            };
+
+            reset('h'); charts.h = new Chart(document.getElementById('healthChart'), { type: 'doughnut', data: { labels: [`On Time (${health.normal + health.advance})`, `Delay (${health.delay})`], datasets: [{ data: [health.normal + health.advance, health.delay], backgroundColor: [colors.olive, colors.rust] }] }, options: baseOpt });
+            reset('pipe'); charts.pipe = new Chart(document.getElementById('pipelineChart'), { type: 'bar', data: { labels: Object.keys(pipeMap), datasets: [{ label: 'Projects', data: Object.values(pipeMap), backgroundColor: colors.taupe }] }, options: { ...baseOpt, indexAxis: 'y', plugins: { ...baseOpt.plugins, datalabels: { display: true, color: '#fff', anchor: 'center', formatter: v => v } } } });
+
+            // Section Efficiency with Days Saved/Delayed in Label
+            reset('ss'); const sLabels = Object.keys(secData).sort((a, b) => secData[b].pct - secData[a].pct);
+            charts.ss = new Chart(document.getElementById('sectionScoreChart'), {
+                type: 'bar', data: { labels: sLabels, datasets: [{ label: 'Efficiency %', data: sLabels.map(l => secData[l].pct), backgroundColor: (ctx) => ctx.raw > 100 ? colors.olive : (ctx.raw < 100 ? colors.rust : colors.blue) }] }, options: {
+                    ...baseOpt, indexAxis: 'y', plugins: {
+                        ...baseOpt.plugins, datalabels: {
+                            display: true, color: '#fff', anchor: 'center', formatter: (val, ctx) => {
+                                const s = secData[ctx.chart.data.labels[ctx.dataIndex]];
+                                const dayLabel = s.days >= 0 ? `+${s.days}d Saved` : `${s.days}d Delay`;
+                                return `${val.toFixed(1)}% (${dayLabel})`;
+                            }
+                        }
+                    }
+                }
+            });
+
+            reset('pr'); charts.pr = new Chart(document.getElementById('phaseRankingChart'), { type: 'bar', data: { labels: pStats.map(p => p.name), datasets: [{ label: 'Adv', data: pStats.map(p => p.advance), backgroundColor: colors.olive }, { label: 'On Time', data: pStats.map(p => p.normal), backgroundColor: colors.blue }, { label: 'Delay', data: pStats.map(p => p.delay), backgroundColor: colors.rust }] }, options: { ...baseOpt, scales: { x: { stacked: true, ticks: { font: { size: 8 } } }, y: { stacked: true } }, plugins: { ...baseOpt.plugins, datalabels: { display: true, color: '#fff', anchor: 'center', formatter: (v, ctx) => { return v > 0 ? v : ''; } } } } });
+            
+            reset('v'); charts.v = new Chart(document.getElementById('bottleneckChart'), {
+                type: 'bar', data: {
+                    labels: pStats.map(p => p.name),
+                    datasets: [{
+                        label: 'Avg Variance',
+                        data: pStats.map(p => Math.round(p.totalDiff / (p.count || 1))),
+                        backgroundColor: (c) => c.raw > 0 ? colors.rust : colors.olive
+                    }]
+                },
+                options: {
+                    ...baseOpt,
+                    scales: {
+                        x: { ticks: { font: { size: 8 } } },
+                        y: { grace: '20%' }
+                    },
+                    plugins: {
+                        ...baseOpt.plugins,
+                        datalabels: {
+                            display: true,
+                            color: '#444',
+                            anchor: (ctx) => ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start',
+                            align: (ctx) => ctx.dataset.data[ctx.dataIndex] >= 0 ? 'top' : 'bottom',
+                            formatter: v => v + 'd',
+                            font: { weight: 'bold', size: 9 }
+                        }
+                    }
+                }
+            });
+            
+            reset('r'); charts.r = new Chart(document.getElementById('radarChart'), { type: 'radar', data: { labels: pStats.map(p => p.name), datasets: [{ label: 'Success %', data: pStats.map(p => p.count > 0 ? Math.round(((p.advance + p.normal) / p.count) * 100) : 0), borderColor: colors.olive, backgroundColor: 'rgba(85,139,47,0.1)' }] }, options: { ...baseOpt, plugins: { ...baseOpt.plugins, datalabels: { display: false } }, scales: { r: { min: 0, max: 100, pointLabels: { font: { size: 8 } } } } } });
+            
+            reset('t'); charts.t = new Chart(document.getElementById('teamChart'), { type: 'bar', data: { labels: Object.keys(teamMap), datasets: [{ label: 'Late', data: Object.values(teamMap).map(v => v.late), backgroundColor: colors.rust }, { label: 'OK', data: Object.values(teamMap).map(v => v.ok), backgroundColor: colors.olive }] }, options: { ...baseOpt, scales: { x: { stacked: true }, y: { stacked: true } } } });
+            
+            reset('sol'); charts.sol = new Chart(document.getElementById('solutionChart'), { type: 'pie', data: { labels: Object.keys(solMap), datasets: [{ data: Object.values(solMap), backgroundColor: [colors.rust, colors.taupe, colors.blue, colors.olive] }] }, options: baseOpt });
+
+            // Triple Analysis Chart for Section Efficiency (Horizontal Bars)
+            reset('sef');
+            const sefLabels = Object.keys(sectionStatus).sort((a, b) => sectionStatus[b].qty - sectionStatus[a].qty);
+            const totalSefQty = sefLabels.reduce((sum, label) => sum + (sectionStatus[label].qty || 0), 0);
+            
+            const sefQtyBadge = document.getElementById('sectionEffQtyBadge');
+            if (sefQtyBadge) {
+                sefQtyBadge.innerText = `Qty: ${totalSefQty}`;
+            }
+
+            // Calculate max x-axis value
+            const sefOnTimeData = sefLabels.map(l => sectionStatus[l].onTime);
+            const sefDelayData = sefLabels.map(l => sectionStatus[l].delay);
+            const sefAdvanceData = sefLabels.map(l => sectionStatus[l].advance);
+            const sefMaxValue = Math.max(...sefOnTimeData, ...sefDelayData, ...sefAdvanceData);
+            const sefXAxisMax = sefMaxValue + 1;
+
+            // Add total projects per section to labels
+            const sefLabelsWithQty = sefLabels.map(l => `${l} (${sectionStatus[l].qty})`);
+
+            charts.sef = new Chart(document.getElementById('sectionEfficiencyChart'), {
+                type: 'bar',
+                data: {
+                    labels: sefLabelsWithQty,
+                    datasets: [
+                        {
+                            label: 'On Time',
+                            data: sefOnTimeData,
+                            backgroundColor: colors.blue
+                        },
+                        {
+                            label: 'Delay',
+                            data: sefDelayData,
+                            backgroundColor: colors.rust
+                        },
+                        {
+                            label: 'Advanced',
+                            data: sefAdvanceData,
+                            backgroundColor: colors.olive
+                        }
+                    ]
+                },
+                options: {
+                    ...baseOpt,
+                    indexAxis: 'y',
+                    scales: {
+                        y: {
+                            type: 'category',
+                            title: { display: true, text: 'Section' },
+                            stacked: false
+                        },
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: { display: true, text: 'Project Count' },
+                            beginAtZero: true,
+                            max: sefXAxisMax,
+                            stacked: false
+                        }
+                    },
+                    plugins: {
+                        ...baseOpt.plugins,
+                        datalabels: {
+                            display: true,
+                            color: '#000',
+                            formatter: (v, ctx) => {
+                                if (v === 0) return '';
+                                const sectionIdx = ctx.dataIndex;
+                                const section = sefLabels[sectionIdx];
+                                const total = sectionStatus[section].qty;
+                                const pct = total > 0 ? Math.round((v / total) * 100) : 0;
+                                return `${v}\n(${pct}%)`;
+                            },
+                            font: { size: 9, weight: 'bold' },
+                            anchor: 'end',
+                            align: 'right'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDashboard2Visuals() {
+            const reset = (id) => { if (charts[id]) charts[id].destroy(); };
+            const baseOpt = {
+                responsive: true, maintainAspectRatio: false, plugins: {
+                    legend: { display: true, labels: { boxWidth: 10, font: { size: 9 } } }, datalabels: {
+                        display: true, color: '#fff', font: { weight: 'bold', size: 9 }
+                    }
+                }
+            };
+
+            // Separate by solution type - check for cloud providers: AWS, Azure, GCP, or "cloud" keyword
+            const cloudKeywords = ['cloud', 'aws', 'azure', 'gcp', 'public'];
+            const isCloudSolution = (sol) => {
+                if (!sol) return false;
+                const solLower = sol.toLowerCase();
+                return cloudKeywords.some(keyword => solLower.includes(keyword));
+            };
+
+            const onpremProjects = rawProjectData.filter(p => !isCloudSolution(p.solution));
+            const cloudProjects = rawProjectData.filter(p => isCloudSolution(p.solution));
+
+            // Count by size bracket
+            const onpremSize = { S: 0, M: 0, L: 0, XL: 0 };
+            const cloudSize = { S: 0, M: 0, L: 0, XL: 0 };
+            const onpremTotalBySize = { S: 0, M: 0, L: 0, XL: 0 };
+            const cloudTotalBySize = { S: 0, M: 0, L: 0, XL: 0 };
+            const onpremImplBySize = { S: 0, M: 0, L: 0, XL: 0 };
+            const cloudImplBySize = { S: 0, M: 0, L: 0, XL: 0 };
+            const onpremRunningBySize = { S: 0, M: 0, L: 0, XL: 0 };
+            const cloudRunningBySize = { S: 0, M: 0, L: 0, XL: 0 };
+            const onpremValidTotalCount = { S: 0, M: 0, L: 0, XL: 0 };
+            const cloudValidTotalCount = { S: 0, M: 0, L: 0, XL: 0 };
+            const onpremValidImplCount = { S: 0, M: 0, L: 0, XL: 0 };
+            const cloudValidImplCount = { S: 0, M: 0, L: 0, XL: 0 };
+            const onpremValidRunningCount = { S: 0, M: 0, L: 0, XL: 0 };
+            const cloudValidRunningCount = { S: 0, M: 0, L: 0, XL: 0 };
+
+            onpremProjects.forEach(p => {
+                const size = getProjectSizeBracket(p.totalCost, 'On-Premise');
+                onpremSize[size]++;
+                if (p.totalCost > 0) {
+                    onpremTotalBySize[size] += p.totalCost;
+                    onpremValidTotalCount[size]++;
+                }
+                if (p.implementCost > 0) {
+                    onpremImplBySize[size] += p.implementCost;
+                    onpremValidImplCount[size]++;
+                }
+                if (p.runningCost > 0) {
+                    onpremRunningBySize[size] += p.runningCost;
+                    onpremValidRunningCount[size]++;
+                }
+            });
+
+            cloudProjects.forEach(p => {
+                const size = getProjectSizeBracket(p.totalCost, 'Cloud');
+                cloudSize[size]++;
+                if (p.totalCost > 0) {
+                    cloudTotalBySize[size] += p.totalCost;
+                    cloudValidTotalCount[size]++;
+                }
+                if (p.implementCost > 0) {
+                    cloudImplBySize[size] += p.implementCost;
+                    cloudValidImplCount[size]++;
+                }
+                if (p.runningCost > 0) {
+                    cloudRunningBySize[size] += p.runningCost;
+                    cloudValidRunningCount[size]++;
+                }
+            });
+
+            // On-Premise Size Ranking
+            reset('onpremSize');
+            charts.onpremSize = new Chart(document.getElementById('onpremSizeChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['S (<2M)', 'M (2-4M)', 'L (4-6M)', 'XL (>6M)'],
+                    datasets: [{
+                        label: 'Project Quantity',
+                        data: [onpremSize.S, onpremSize.M, onpremSize.L, onpremSize.XL],
+                        backgroundColor: [colors.olive, colors.blue, colors.taupe, colors.rust]
+                    }]
+                },
+                options: {
+                    ...baseOpt,
+                    plugins: {
+                        ...baseOpt.plugins,
+                        datalabels: { display: true, color: '#fff', anchor: 'center', formatter: v => v }
+                    },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+
+            // Cloud Size Ranking
+            reset('cloudSize');
+            charts.cloudSize = new Chart(document.getElementById('cloudSizeChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['S (<1M)', 'M (1-2.5M)', 'L (2.5-5M)', 'XL (>5M)'],
+                    datasets: [{
+                        label: 'Project Quantity',
+                        data: [cloudSize.S, cloudSize.M, cloudSize.L, cloudSize.XL],
+                        backgroundColor: [colors.olive, colors.blue, colors.taupe, colors.rust]
+                    }]
+                },
+                options: {
+                    ...baseOpt,
+                    plugins: {
+                        ...baseOpt.plugins,
+                        datalabels: { display: true, color: '#fff', anchor: 'center', formatter: v => v }
+                    },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+
+            // Cost Distribution by Project Quantity with Cloud Provider Breakdown
+            reset('costDistribution');
+            
+            // Count project quantities by cloud provider
+            let onpremQtyDist = 0;
+            let awsQty = 0;
+            let azureQty = 0;
+            let gcpQty = 0;
+            
+            rawProjectData.forEach(p => {
+                const solLower = (p.solution || '').toLowerCase();
+                if (solLower.includes('aws')) awsQty++;
+                else if (solLower.includes('azure')) azureQty++;
+                else if (solLower.includes('gcp')) gcpQty++;
+                else if (!isCloudSolution(p.solution)) onpremQtyDist++;
+            });
+            
+            const distributionLabels = ['On-Premise', 'AWS', 'Azure', 'GCP'];
+            const distributionData = [onpremQtyDist, awsQty, azureQty, gcpQty];
+            const distributionColors = [colors.taupe, '#FF9500', '#0078D4', '#EA4335'];
+            
+            charts.costDistribution = new Chart(document.getElementById('costDistributionChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: distributionLabels,
+                    datasets: [{
+                        data: distributionData,
+                        backgroundColor: distributionColors
+                    }]
+                },
+                options: baseOpt
+            });
+
+            // Update summary boxes
+            const totalPublicCloudDist = awsQty + azureQty + gcpQty;
+            document.getElementById('totalOnPremDist').innerText = onpremQtyDist;
+            document.getElementById('totalPublicCloudDist').innerText = totalPublicCloudDist;
+
+            // On-Premise Triple Cost Metrics by Size
+            reset('onpremCostMetrics');
+            const onpremAvgTotalCost = ['S', 'M', 'L', 'XL'].map(size => {
+                const count = onpremValidTotalCount[size] || 0;
+                const total = onpremTotalBySize[size] || 0;
+                return count > 0 ? total / count : 0;
+            });
+
+            const onpremAvgImplCost = ['S', 'M', 'L', 'XL'].map(size => {
+                const count = onpremValidImplCount[size] || 0;
+                const total = onpremImplBySize[size] || 0;
+                return count > 0 ? total / count : 0;
+            });
+
+            const onpremAvgRunningCost = ['S', 'M', 'L', 'XL'].map(size => {
+                const count = onpremValidRunningCount[size] || 0;
+                const total = onpremRunningBySize[size] || 0;
+                return count > 0 ? total / count : 0;
+            });
+
+            charts.onpremCostMetrics = new Chart(document.getElementById('onpremCostMetricsChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['S', 'M', 'L', 'XL'],
+                    datasets: [
+                        {
+                            label: 'Avg Total Cost',
+                            data: onpremAvgTotalCost,
+                            backgroundColor: colors.blue,
+                            barPercentage: 0.8
+                        },
+                        {
+                            label: 'Avg Impl Cost',
+                            data: onpremAvgImplCost,
+                            backgroundColor: colors.rust,
+                            barPercentage: 0.8
+                        },
+                        {
+                            label: 'Avg Sub Scription Cost',
+                            data: onpremAvgRunningCost,
+                            backgroundColor: '#FFD700',
+                            barPercentage: 0.8
+                        }
+                    ]
+                },
+                options: {
+                    ...baseOpt,
+                    indexAxis: 'y',
+                    scales: {
+                        y: {
+                            type: 'category',
+                            title: { display: true, text: 'Size' },
+                            stacked: false
+                        },
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: { display: true, text: 'Cost (THB)' },
+                            beginAtZero: true,
+                            stacked: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000000).toFixed(1) + 'M';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        ...baseOpt.plugins,
+                        datalabels: {
+                            display: true,
+                            color: '#000',
+                            formatter: v => v > 0 ? (v / 1000000).toFixed(1) + 'M' : '0',
+                            font: { size: 9, weight: 'bold' },
+                            anchor: 'end',
+                            align: 'right'
+                        }
+                    }
+                }
+            });
+
+            // Cloud Triple Cost Metrics by Size
+            reset('cloudCostMetrics');
+            const cloudAvgTotalCost = ['S', 'M', 'L', 'XL'].map(size => {
+                const count = cloudValidTotalCount[size] || 0;
+                const total = cloudTotalBySize[size] || 0;
+                return count > 0 ? total / count : 0;
+            });
+
+            const cloudAvgImplCost = ['S', 'M', 'L', 'XL'].map(size => {
+                const count = cloudValidImplCount[size] || 0;
+                const total = cloudImplBySize[size] || 0;
+                return count > 0 ? total / count : 0;
+            });
+
+            const cloudAvgRunningCost = ['S', 'M', 'L', 'XL'].map(size => {
+                const count = cloudValidRunningCount[size] || 0;
+                const total = cloudRunningBySize[size] || 0;
+                return count > 0 ? total / count : 0;
+            });
+
+            charts.cloudCostMetrics = new Chart(document.getElementById('cloudCostMetricsChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['S', 'M', 'L', 'XL'],
+                    datasets: [
+                        {
+                            label: 'Avg Total Cost',
+                            data: cloudAvgTotalCost,
+                            backgroundColor: colors.blue,
+                            barPercentage: 0.8
+                        },
+                        {
+                            label: 'Avg Impl Cost',
+                            data: cloudAvgImplCost,
+                            backgroundColor: colors.rust,
+                            barPercentage: 0.8
+                        },
+                        {
+                            label: 'Avg Sub Scription Cost',
+                            data: cloudAvgRunningCost,
+                            backgroundColor: '#FFD700',
+                            barPercentage: 0.8
+                        }
+                    ]
+                },
+                options: {
+                    ...baseOpt,
+                    indexAxis: 'y',
+                    scales: {
+                        y: {
+                            type: 'category',
+                            title: { display: true, text: 'Size' },
+                            stacked: false
+                        },
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: { display: true, text: 'Cost (THB)' },
+                            beginAtZero: true,
+                            stacked: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000000).toFixed(1) + 'M';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        ...baseOpt.plugins,
+                        datalabels: {
+                            display: true,
+                            color: '#000',
+                            formatter: v => v > 0 ? (v / 1000000).toFixed(1) + 'M' : '0',
+                            font: { size: 9, weight: 'bold' },
+                            anchor: 'end',
+                            align: 'right'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDashboard3Visuals() {
+            const reset = (id) => { if (charts[id]) charts[id].destroy(); };
+            const baseOpt = {
+                responsive: true, maintainAspectRatio: false, plugins: {
+                    legend: { display: true, labels: { boxWidth: 10, font: { size: 9 } } }, datalabels: {
+                        display: true, color: '#fff', font: { weight: 'bold', size: 9 }
+                    }
+                }
+            };
+
+            // Filter by quarter if selected
+            let filteredData = rawProjectData;
+            if (selectedQuarter) {
+                filteredData = rawProjectData.filter(p => p.quarter === selectedQuarter);
+            }
+
+            // Helper function to check if solution is cloud (used both at top level and in updateDashboard3Visuals)
+            // Check if already defined globally to avoid redefinition
+            if (typeof window.isCloudSolution === 'undefined') {
+                window.isCloudSolution = (sol) => {
+                    const cloudKeywords = ['cloud', 'aws', 'azure', 'gcp', 'public'];
+                    return cloudKeywords.some(kw => sol.toLowerCase().includes(kw));
+                };
+            }
+            const isCloudSolution = window.isCloudSolution;
+
+            // Helper function to filter data by solution type
+            const filterBySolutionType = (data) => {
+                if (selectedSolutionType === 'All') return data;
+                if (selectedSolutionType === 'On-Premise') return data.filter(p => !isCloudSolution(p.solution));
+                if (selectedSolutionType === 'Public Cloud') return data.filter(p => isCloudSolution(p.solution));
+                // For specific cloud providers
+                return data.filter(p => p.solution.toLowerCase().includes(selectedSolutionType.toLowerCase()));
+            };
+
+            const solutionFilteredData = filterBySolutionType(filteredData);
+
+            // Group by solution type
+            const solutionQty = {};
+            const implCostByQuarter = {};
+            const projectActivityByQuarter = {}; // Planned vs Actual
+
+            solutionFilteredData.forEach(p => {
+                const sol = p.solution || 'Unknown';
+                solutionQty[sol] = (solutionQty[sol] || 0) + 1;
+
+                // By quarter
+                const q = p.quarter;
+                implCostByQuarter[q] = (implCostByQuarter[q] || 0) + p.implementCost;
+            });
+
+            // Project Activity (count by quarter - planned vs actual)
+            allQuarters.forEach(q => {
+                const projectsInQuarter = rawProjectData.filter(p => p.quarter === q);
+                const withActual = projectsInQuarter.filter(p => p.actualDate !== null).length;
+                const planned = projectsInQuarter.length;
+                projectActivityByQuarter[q] = { planned: planned, actual: withActual };
+            });
+
+            // Calculate On-Premise and Public Cloud totals
+            let onPremQty = 0, pubCloudQty = 0;
+            solutionFilteredData.forEach(p => {
+                if (isCloudSolution(p.solution)) {
+                    pubCloudQty++;
+                } else {
+                    onPremQty++;
+                }
+            });
+            document.getElementById('onPremQty').innerText = onPremQty;
+            document.getElementById('pubCloudQty').innerText = pubCloudQty;
+
+            // Solution Type Chart
+            reset('solutionType');
+            charts.solutionType = new Chart(document.getElementById('solutionTypeChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(solutionQty),
+                    datasets: [{
+                        data: Object.values(solutionQty),
+                        backgroundColor: [colors.rust, colors.taupe, colors.blue, colors.olive]
+                    }]
+                },
+                options: baseOpt
+            });
+
+            // Stacked Quarter Chart
+            reset('quarterStacked');
+            const allSolutions = [...new Set(rawProjectData.map(p => p.solution).filter(s => s))];
+            const stackedData = {};
+            
+            allSolutions.forEach(sol => {
+                stackedData[sol] = {};
+                allQuarters.forEach(q => {
+                    stackedData[sol][q] = rawProjectData.filter(p => p.solution === sol && p.quarter === q).length;
+                });
+            });
+
+            const datasets = allSolutions.map((sol, idx) => ({
+                label: sol,
+                data: allQuarters.map(q => stackedData[sol][q] || 0),
+                backgroundColor: [colors.rust, colors.taupe, colors.blue, colors.olive][idx % 4]
+            }));
+
+            charts.quarterStacked = new Chart(document.getElementById('quarterStackedChart'), {
+                type: 'bar',
+                data: {
+                    labels: allQuarters,
+                    datasets: datasets
+                },
+                options: {
+                    ...baseOpt,
+                    scales: { y: { stacked: true } }
+                }
+            });
+
+            // Implementation Cost by Quarter
+            reset('implCost');
+            const implCostLabels = Object.keys(implCostByQuarter).sort();
+            charts.implCost = new Chart(document.getElementById('implCostChart'), {
+                type: 'bar',
+                data: {
+                    labels: implCostLabels,
+                    datasets: [{
+                        label: 'Implementation Cost / Quarter',
+                        data: implCostLabels.map(q => implCostByQuarter[q] || 0),
+                        backgroundColor: colors.rust
+                    }]
+                },
+                options: {
+                    ...baseOpt,
+                    plugins: {
+                        ...baseOpt.plugins,
+                        datalabels: {
+                            display: true,
+                            color: '#fff',
+                            formatter: v => 'THB ' + (v / 1000000).toFixed(1) + 'M'
+                        }
+                    }
+                }
+            });
+
+            // Average Project Cost by Solution Type
+            reset('avgCost');
+            const avgCostBySOL = {};
+            const countBySol = {};
+            filteredData.forEach(p => {
+                const sol = p.solution || 'Unknown';
+                avgCostBySOL[sol] = (avgCostBySOL[sol] || 0) + p.totalCost;
+                countBySol[sol] = (countBySol[sol] || 0) + 1;
+            });
+
+            const avgCostLabels = Object.keys(avgCostBySOL);
+            const avgCostValues = avgCostLabels.map(sol => 
+                countBySol[sol] > 0 ? Math.round(avgCostBySOL[sol] / countBySol[sol]) : 0
+            );
+
+            charts.avgCost = new Chart(document.getElementById('avgCostChart'), {
+                type: 'bar',
+                data: {
+                    labels: avgCostLabels,
+                    datasets: [{
+                        label: 'Average Project Cost',
+                        data: avgCostValues,
+                        backgroundColor: colors.blue
+                    }]
+                },
+                options: {
+                    ...baseOpt,
+                    indexAxis: 'y',
+                    plugins: {
+                        ...baseOpt.plugins,
+                        datalabels: {
+                            display: true,
+                            color: '#fff',
+                            formatter: v => 'THB ' + (v / 1000000).toFixed(1) + 'M'
+                        }
+                    }
+                }
+            });
+
+            // Project Activity Trend (Planned vs Actual)
+            reset('projectActivity');
+            const activityLabels = Object.keys(projectActivityByQuarter).sort();
+            charts.projectActivity = new Chart(document.getElementById('projectActivityChart'), {
+                type: 'bar',
+                data: {
+                    labels: activityLabels,
+                    datasets: [
+                        {
+                            label: 'Planned Projects',
+                            data: activityLabels.map(q => projectActivityByQuarter[q].planned || 0),
+                            backgroundColor: colors.blue
+                        },
+                        {
+                            label: 'Actual Executed',
+                            data: activityLabels.map(q => projectActivityByQuarter[q].actual || 0),
+                            backgroundColor: colors.olive
+                        }
+                    ]
+                },
+                options: {
+                    ...baseOpt,
+                    scales: {
+                        y: { beginAtZero: true }
+                    },
+                    plugins: {
+                        ...baseOpt.plugins,
+                        datalabels: {
+                            display: true,
+                            color: '#fff',
+                            anchor: 'center',
+                            formatter: v => v
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
